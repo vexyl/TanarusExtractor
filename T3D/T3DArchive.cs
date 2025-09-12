@@ -125,6 +125,16 @@ namespace T3D
             _stream = stream;
         }
 
+        public Stream GetStreamCopy()
+        {
+			MemoryStream stream = new MemoryStream();
+
+			_stream.Seek(Offset, SeekOrigin.Begin);
+            _stream.CopyBytes(stream, (int)Size) ;
+			_stream.Seek(Offset, SeekOrigin.Begin);
+
+			return stream;
+        }
         public void ExtractToDirectory(string path)
         {
             _stream.Seek(Offset, SeekOrigin.Begin);
