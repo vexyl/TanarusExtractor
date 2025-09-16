@@ -1,12 +1,12 @@
 # TanarusExtractor
 
 ## Info
-This repository adds basic WLD support to the T3D extractor. At the moment, it will convert the WLD inside the T3D to a .obj as an untextured map. Eventually, it should support textures as I have all the information to implement it. It still needs a ton of polish, so feel free to make contributions.
+This repository adds basic WLD support to the T3D extractor. At the moment, it will convert the WLD inside the T3D to a .obj/.mtl. It still needs a ton of polish, so feel free to make contributions.
 
 ## New features
 Basic WLD support
 
-Export WLD to OBJ (untextured map)
+Export WLD to OBJ
 
 ## Running
 If running as an executable: ```./T3D.exe <archive.t3d> <output folder> [-obj]```
