@@ -22,6 +22,8 @@ https://wld-doc.github.io/
 
 https://docs.eqemu.io/client/guides/file-formats/wld-by-windcatcher/ (EverQuest specific but still helpful)
 
+https://github.com/LanternEQ/LanternExtractor (EverQuest specific)
+
 WLDCOM.EXE from the Tanarus MapEditor (Using IDA Free + Decompiler)
 
 # T3D (Original README)

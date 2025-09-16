@@ -71,7 +71,7 @@ namespace T3D
 
                         if (extractObj && entry.FileName.ToLower().EndsWith(".wld"))
                         {
-                            Console.Write("\nConverting WLD to OBJ ... ");
+                            Console.Write("Converting WLD to OBJ ... ");
                             var wld = new WLD(entry.GetStreamCopy());
                             wld.Parse();
 
@@ -103,7 +103,6 @@ namespace T3D
                             var uniqueUVs = new List<UV>();
                             var normals = new List<Normal>();
                             
-                            
                             int nextIndex = 1;
 							foreach (var fragment in regionFragmentList)
 							{
@@ -119,7 +118,6 @@ namespace T3D
                                     {
                                         int vIndex = wall.VertexList[i] - 1;
                                         var uv = wall.UVs[i];
-
 
                                         var pair = new VertexUVPair(vIndex, uv.x, uv.y, i);
                                         if (!vertexUVToIdx.ContainsKey(pair))

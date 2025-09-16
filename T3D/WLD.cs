@@ -76,8 +76,6 @@ public class WLD
 		_stream.Seek(0, SeekOrigin.Begin);
 		using (var reader = new BinaryReader(_stream, Encoding.ASCII, false))
 		{
-			Console.WriteLine();
-
 			Verify(reader);
 
 			var maxFragments = reader.ReadUInt32();
