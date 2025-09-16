@@ -44,7 +44,6 @@ public class Fragment2c_WorldVertices : Fragment
 		stringBuilder.AppendLine($"NUMVERTICES {vertices.Count}");
 		foreach (var vertex in vertices)
 		{
-
 			stringBuilder.Append('\t', indentation);
 			stringBuilder.AppendLine($"XYZ {vertex.x} {vertex.y} {vertex.z}");
 		}

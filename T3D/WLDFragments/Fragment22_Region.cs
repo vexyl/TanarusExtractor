@@ -3,6 +3,17 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using static Fragment22_Region;
+using T3D;
+
+public class UV
+{
+	public float x, y;
+}
+
+public class Normal
+{
+	public float a, b, c, d;
+}
 
 public class Fragment22_Region : Fragment
 {
@@ -25,7 +36,7 @@ public class Fragment22_Region : Fragment
 		public RegionHeader(BinaryReader reader)
 		{
 			// region static-size header (11 * 4 bytes)
-			NameRef = reader.ReadUInt32(); // can be Negative
+			NameRef = reader.ReadUInt32() + 1;
 			RegionFlag = reader.ReadUInt32();
 			AmbientLightDef = reader.ReadUInt32();
 			NumRegionVertex = reader.ReadUInt32();
@@ -58,12 +69,17 @@ public class Fragment22_Region : Fragment
 	public class Wall
 	{
 		public uint RenderMethod = 0;
-		public List<uint> VertexList = new List<uint>();
+		public List<Fragment04_SimpleSpriteDef> SimpleSpriteDefs = new List<Fragment04_SimpleSpriteDef>();
+		public List<int> VertexList = new List<int>();
+		public List<UV> UVs = new List<UV>();
+		public List<Normal> Normals = new List<Normal>();
 	}
 
 	internal Fragment22_Region(BinaryReader reader)
 	{
 		RegionHeader header = new RegionHeader(reader);
+
+		var name = WLD.GetNameFromRef((int)header.NameRef);
 
 		// untested
 		// 3 floats XYZ vertex each num_region
@@ -106,7 +122,7 @@ public class Fragment22_Region : Fragment
 		for (int j = 0; j < numVertices; ++j)
 		{
 			var v = reader.ReadUInt32() + 1; // non-zero vertex index
-			wall.VertexList.Add(v);
+			wall.VertexList.Add((int)v);
 			//Console.Write($" {v}");
 		}
 		//Console.WriteLine();
@@ -155,7 +171,11 @@ public class Fragment22_Region : Fragment
 		if ((renderMethodFlag & 0x8) != 0)
 		{
 			uint simpleSpriteInstRef = reader.ReadUInt32();
-			//Console.WriteLine($"\t\tSIMPLESPRITEINST {simpleSpriteInstRef:X}");
+			var context = WLD.ContextQueue.Dequeue();
+			//Console.WriteLine($"SimpleSpriteInst context={context}");
+
+			var simpleSpriteDefFragment = (Fragment04_SimpleSpriteDef)WLD.Fragments[context];
+			wall.SimpleSpriteDefs.Add(simpleSpriteDefFragment);
 		}
 
 		if ((renderMethodFlag & 0x10) != 0)
@@ -183,6 +203,11 @@ public class Fragment22_Region : Fragment
 			{
 				float uvx = reader.ReadSingle();
 				float uvy = reader.ReadSingle();
+
+				UV uv = new UV();
+				uv.x = uvx;
+				uv.y = uvy;
+				wall.UVs.Add(uv);
 				//Console.WriteLine($"\t\tUV {uvx} {uvy}");
 			}
 		}
@@ -198,6 +223,9 @@ public class Fragment22_Region : Fragment
 			float nb = reader.ReadSingle();
 			float nc = reader.ReadSingle();
 			float nd = reader.ReadSingle();
+			Normal normal = new Normal();
+			normal.a = na; normal.b = nb; normal.c = nc; normal.d = nd;
+			wall.Normals.Add(normal);
 			//Console.WriteLine($"\tNORMALABCD {na} {nb} {nc} {nd}");
 		}
 
