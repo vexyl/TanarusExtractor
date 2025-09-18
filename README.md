@@ -13,7 +13,7 @@ If running as an executable: ```./T3D.exe <archive.t3d> <output folder> [-obj]``
 
 If running as a DLL: ```dotnet T3D.dll <archive.t3d> <output folder> [-obj]```
 
-The command line option ```-obj``` will convert the WLD to OBJ as a basic untextured map. Leaving this out it will function as the original T3D and only extract the contents of the T3D archive.
+The command line option ```-obj``` will convert the WLD to OBJ format. Leaving this out it will function as the original T3D and only extract the contents of the T3D archive.
 
 ## References
 https://github.com/MrPnut/T3D
