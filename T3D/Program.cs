@@ -5,7 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Text;
 using static Fragment22_Region;
+
+class FaceStrings
+{
+    public string face;
+    public string material;
+}
 
 public class VertexUVPair
 {
@@ -87,6 +94,7 @@ namespace T3D
                             objWriter.WriteLine("# Exported with TanarusExtractor");
                             objWriter.WriteLine($"mtllib {filename}.mtl");
 
+                            mtlWriter.WriteLine("newmtl Default\nKd 1.000 1.000 1.000\n");
 							foreach (var simpleSpriteDef in simpleSpriteDefs)
 							{
 								mtlWriter.WriteLine($"newmtl {simpleSpriteDef.Name}");
@@ -111,13 +119,19 @@ namespace T3D
                                     if (wall.Normals.Count > 0)
                                         normals.AddRange(wall.Normals);
 
-									if (wall.UVs.Count == 0)
+									if (wall.RenderMethod == 1)
 										continue;
 
 									for (int i = 0; i < wall.VertexList.Count; i++)
                                     {
                                         int vIndex = wall.VertexList[i] - 1;
-                                        var uv = wall.UVs[i];
+                                        UV uv = new UV();
+                                        uv.x = 0;
+                                        uv.y = 0;
+                                        if (wall.UVs.Count > i)
+                                        {
+                                            uv = wall.UVs[i];
+                                        }
 
                                         var pair = new VertexUVPair(vIndex, uv.x, uv.y, i);
                                         if (!vertexUVToIdx.ContainsKey(pair))
@@ -145,8 +159,16 @@ namespace T3D
 								objWriter.WriteLine($"vt {uv.x} {uv.y}");
 							}
 
+                            var faceGroups = new Dictionary<string, List<FaceStrings>>()
+                            {
+                                { "ramps", new List<FaceStrings>() },
+                                { "misc", new List<FaceStrings>() },
+                                { "floors", new List<FaceStrings>() },
+                                { "ceilings", new List<FaceStrings>() },
+                                { "walls", new List<FaceStrings>() }
+                            };
+
 							string newMaterial = "";
-							string currentMaterial = "";
 							int uvIndex = 1;
                             int normalIndex = 0;
 							List<UV> wallUVs = new List<UV>();
@@ -159,38 +181,84 @@ namespace T3D
                                         normalIndex++;
                                     }
 
-									if (wall.UVs.Count == 0)
-										continue;
+                                    if (wall.RenderMethod == 1)
+                                        continue;
 
-									foreach (var simpleSpriteInst in wall.SimpleSpriteDefs)
-									{
-										newMaterial = simpleSpriteInst.Name;
-										break;
-									}
+                                    if (wall.SimpleSpriteDefs.Count > 0)
+                                        newMaterial = wall.SimpleSpriteDefs[0].Name;
+                                    else
+                                        newMaterial = "Default";
 
-									if (newMaterial != currentMaterial)
-									{
-										currentMaterial = newMaterial;
-										objWriter.WriteLine($"usemtl {currentMaterial}");
-									}
+                                    var faceStrings = new FaceStrings();
+                                    var faceStringBuilder = new StringBuilder();
 
-                                    objWriter.Write("f");
+                                    faceStringBuilder.Append("f");
 									for (int i = 0; i < wall.VertexList.Count; i++)
 									{
 										int vIndex = wall.VertexList[i] - 1;
-										var uv = wall.UVs[i];
+										UV uv = new UV();
+										uv.x = 0;
+										uv.y = 0;
+										if (wall.UVs.Count > i)
+										{
+											uv = wall.UVs[i];
+										}
+
 
 										var pair = new VertexUVPair(vIndex, uv.x, uv.y, i);
                                         int objIndex = vertexUVToIdx[pair];
 
-										objWriter.Write($" {objIndex}/{objIndex}/{normalIndex}");
+										faceStringBuilder.Append($" {objIndex}/{objIndex}/{normalIndex}");
 									}
-									objWriter.WriteLine();
+                                    faceStringBuilder.AppendLine();
+
+                                    faceStrings.face = faceStringBuilder.ToString();
+                                    faceStrings.material = newMaterial;
+
+                                    var normal = wall.Normals[0];
+                                    if (normal.c == -1)
+                                    {
+
+                                        faceGroups["ceilings"].Add(faceStrings);
+                                    }
+                                    else if (normal.c == 1)
+                                    {
+
+                                        faceGroups["floors"].Add(faceStrings);
+                                    }
+                                    else if ((Math.Abs(normal.a) == 1 || Math.Abs(normal.b) == 1))
+                                    {
+                                        faceGroups["walls"].Add(faceStrings);
+
+                                    }
+                                    else if (normal.c > 0 && normal.c < 1)
+                                    {
+                                        faceGroups["ramps"].Add(faceStrings);
+                                    }
+                                    else
+                                    {
+                                        faceGroups["misc"].Add(faceStrings);
+                                    }
 								}
 							}
 
-							objWriter.Flush();
+							string currentMaterial = "";
+							foreach (var key in faceGroups.Keys)
+                            {
+                                objWriter.WriteLine($"o {key}");
+                                foreach (var face in faceGroups[key])
+                                {
+                                    if (currentMaterial != face.material)
+                                    {
+                                        currentMaterial = face.material;
+                                        objWriter.WriteLine($"usemtl {currentMaterial}");
+                                    }
+                                    objWriter.WriteLine(face.face);
+                                }
+                                objWriter.Flush();
+                            }
 						}
+
                         Console.WriteLine("ok!");
                     }
                 }

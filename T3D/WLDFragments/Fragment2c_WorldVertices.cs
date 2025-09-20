@@ -23,7 +23,7 @@ public class Fragment2c_WorldVertices : Fragment
 
 		for (int i = 0; i < numVertices; ++i)
 		{
-			var vx = reader.ReadSingle() * -1; // Flip mesh to fix mirror issue
+			var vx = reader.ReadSingle() * -1; // Invert map
 			var vy = reader.ReadSingle();
 			var vz = reader.ReadSingle();
 

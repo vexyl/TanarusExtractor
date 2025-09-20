@@ -15,14 +15,14 @@ public class WLD
 	private readonly Stream _stream;
 	public static List<Fragment> Fragments;
 	public static Dictionary<int, string> StringDB;
-	public static Queue<int> ContextQueue;
+	public static Queue<int> FragmentContextQueue;
 
 	internal WLD(Stream stream)
 	{
 		_stream = stream;
 		Fragments = new List<Fragment>();
 		StringDB = new Dictionary<int, string>();
-		ContextQueue = new Queue<int>();
+		FragmentContextQueue = new Queue<int>();
 
 	}
 	private static bool VerifyAgainstBytes(BinaryReader reader, byte[] compareBytes)
@@ -149,9 +149,11 @@ public class WLD
 					case 0x18:
 					case 0x1A:
 					case 0x27:
+						// 12 bytes
 						reader.ReadUInt32(); // Unknown
-						var unk = reader.ReadUInt32();
-						ContextQueue.Enqueue((int)unk);
+						var fragmentRef = reader.ReadUInt32();
+						FragmentContextQueue.Enqueue((int)fragmentRef);
+						// 4 bytes unknown
 						Fragments.Add(new Fragment());
 						break;
 					default:

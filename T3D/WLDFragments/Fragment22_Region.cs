@@ -74,6 +74,7 @@ public class Fragment22_Region : Fragment
 		public List<int> VertexList = new List<int>();
 		public List<UV> UVs = new List<UV>();
 		public List<Normal> Normals = new List<Normal>();
+		public bool IsFloor = false;
 	}
 
 	internal Fragment22_Region(BinaryReader reader)
@@ -172,10 +173,10 @@ public class Fragment22_Region : Fragment
 		if ((renderMethodFlag & 0x8) != 0)
 		{
 			uint simpleSpriteInstRef = reader.ReadUInt32();
-			var context = WLD.ContextQueue.Dequeue();
-			//Console.WriteLine($"SimpleSpriteInst context={context}");
+			var fragmentRef = WLD.FragmentContextQueue.Dequeue();
+			//Console.WriteLine($"SimpleSpriteInst context (fragmentRef)={fragmentRef}");
 
-			var simpleSpriteDefFragment = (Fragment04_SimpleSpriteDef)WLD.Fragments[context];
+			var simpleSpriteDefFragment = (Fragment04_SimpleSpriteDef)WLD.Fragments[fragmentRef];
 			wall.SimpleSpriteDefs.Add(simpleSpriteDefFragment);
 		}
 
@@ -216,6 +217,11 @@ public class Fragment22_Region : Fragment
 		if ((renderMethodFlag & 0x40) != 0)
 		{
 			//Console.WriteLine("\t\tTWOSIDED");
+		}
+
+		if ((wallFlag & 0x1) != 0)
+		{
+			wall.IsFloor = true;
 		}
 
 		if ((wallFlag & 0x2) != 0)
