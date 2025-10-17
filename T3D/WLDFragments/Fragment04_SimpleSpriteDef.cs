@@ -35,7 +35,6 @@ public class Fragment04_SimpleSpriteDef : Fragment
 			var frameFragment = (Fragment03_Frame)WLD.Fragments[(int)frameRef];
 
 			Frames.Add(frameFragment);
-
 		}
 
 		Name = WLD.GetNameFromRef((int)nameRef);

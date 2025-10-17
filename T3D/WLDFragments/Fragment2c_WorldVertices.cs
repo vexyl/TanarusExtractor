@@ -19,6 +19,9 @@ public class Fragment2c_WorldVertices : Fragment
 	public List<Vertex> vertices = new List<Vertex>();
 	internal Fragment2c_WorldVertices(BinaryReader reader)
 	{
+		if (reader == null)
+			return;
+
 		var numVertices = reader.ReadUInt32();
 
 		for (int i = 0; i < numVertices; ++i)

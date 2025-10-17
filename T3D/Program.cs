@@ -6,7 +6,6 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
-using static Fragment22_Region;
 
 class FaceStrings
 {
@@ -83,33 +82,20 @@ namespace T3D
                             wld.Parse();
 
                             var filename = entry.FileName.Replace(".wld", "");
-                            StreamWriter objWriter = new StreamWriter(Path.Combine(args[1], filename + ".obj"));
-                            StreamWriter mtlWriter = new StreamWriter(Path.Combine(args[1], filename + ".mtl"));
 
-                            var worldVerticesFragmentList = WLD.Fragments.OfType<Fragment2c_WorldVertices>().ToList();
-                            var worldVertices = worldVerticesFragmentList[0].vertices;
-                            var regionFragmentList = WLD.Fragments.OfType<Fragment22_Region>().ToList();
-                            var simpleSpriteDefs = WLD.Fragments.OfType<Fragment04_SimpleSpriteDef>().ToList();
+							// Pre-process
+							var worldVerticesFragmentList = WLD.Fragments.OfType<Fragment2c_WorldVertices>().ToList();
 
-                            objWriter.WriteLine("# Exported with TanarusExtractor");
-                            objWriter.WriteLine($"mtllib {filename}.mtl");
-
-                            mtlWriter.WriteLine("newmtl Default\nKd 1.000 1.000 1.000\n");
-							foreach (var simpleSpriteDef in simpleSpriteDefs)
-							{
-								mtlWriter.WriteLine($"newmtl {simpleSpriteDef.Name}");
-								foreach (var frame in simpleSpriteDef.Frames)
-								{
-									mtlWriter.WriteLine($"map_Kd {frame.Name}");
-								}
-                                mtlWriter.WriteLine();
-                                mtlWriter.Flush();
-							}
-
-                            var vertexUVToIdx = new Dictionary<VertexUVPair, int>();
+							var vertexUVToIdx = new Dictionary<VertexUVPair, int>();
                             var uniqueVertices = new List<Vertex>();
                             var uniqueUVs = new List<UV>();
                             var normals = new List<Normal>();
+                            
+                            Debug.Assert(worldVerticesFragmentList.Count > 0);
+
+                            var worldVertices = worldVerticesFragmentList[0].vertices;
+                            var regionFragmentList = WLD.Fragments.OfType<Fragment22_Region>().ToList();
+                            var simpleSpriteDefs = WLD.Fragments.OfType<Fragment04_SimpleSpriteDef>().ToList();
                             
                             int nextIndex = 1;
 							foreach (var fragment in regionFragmentList)
@@ -119,7 +105,7 @@ namespace T3D
                                     if (wall.Normals.Count > 0)
                                         normals.AddRange(wall.Normals);
 
-									if (wall.RenderMethod == 1)
+									if (wall.RenderInfo.RenderMethod == 1)
 										continue;
 
 									for (int i = 0; i < wall.VertexList.Count; i++)
@@ -128,9 +114,9 @@ namespace T3D
                                         UV uv = new UV();
                                         uv.x = 0;
                                         uv.y = 0;
-                                        if (wall.UVs.Count > i)
+                                        if (wall.RenderInfo.UVs.Count > i)
                                         {
-                                            uv = wall.UVs[i];
+                                            uv = wall.RenderInfo.UVs[i];
                                         }
 
                                         var pair = new VertexUVPair(vIndex, uv.x, uv.y, i);
@@ -142,6 +128,25 @@ namespace T3D
                                         }
 									}
 								}
+							}
+
+                            // OBJ/MTL
+							StreamWriter objWriter = new StreamWriter(Path.Combine(args[1], filename + ".obj"));
+							StreamWriter mtlWriter = new StreamWriter(Path.Combine(args[1], filename + ".mtl"));
+
+							objWriter.WriteLine("# Exported with TanarusExtractor");
+							objWriter.WriteLine($"mtllib {filename}.mtl");
+
+							mtlWriter.WriteLine("newmtl Default\nKd 1.000 1.000 1.000\n");
+							foreach (var simpleSpriteDef in simpleSpriteDefs)
+							{
+								mtlWriter.WriteLine($"newmtl {simpleSpriteDef.Name}");
+								foreach (var frame in simpleSpriteDef.Frames)
+								{
+									mtlWriter.WriteLine($"map_Kd {frame.Name}");
+								}
+								mtlWriter.WriteLine();
+								mtlWriter.Flush();
 							}
 
 							foreach (var v in uniqueVertices)
@@ -181,13 +186,16 @@ namespace T3D
                                         normalIndex++;
                                     }
 
-                                    if (wall.RenderMethod == 1)
+                                    if (wall.RenderInfo.RenderMethod == 1)
                                         continue;
 
-                                    if (wall.SimpleSpriteDefs.Count > 0)
-                                        newMaterial = wall.SimpleSpriteDefs[0].Name;
-                                    else
+                                    if (wall.RenderInfo.SimpleSpriteDef > -1)
+                                    {
+                                        var simpleSpriteDefFragment = (Fragment04_SimpleSpriteDef)WLD.Fragments[wall.RenderInfo.SimpleSpriteDef];
+                                        newMaterial = simpleSpriteDefFragment.Name;
+                                    } else {
                                         newMaterial = "Default";
+                                    }
 
                                     var faceStrings = new FaceStrings();
                                     var faceStringBuilder = new StringBuilder();
@@ -199,9 +207,9 @@ namespace T3D
 										UV uv = new UV();
 										uv.x = 0;
 										uv.y = 0;
-										if (wall.UVs.Count > i)
+										if (wall.RenderInfo.UVs.Count > i)
 										{
-											uv = wall.UVs[i];
+											uv = wall.RenderInfo.UVs[i];
 										}
 
 
@@ -215,30 +223,36 @@ namespace T3D
                                     faceStrings.face = faceStringBuilder.ToString();
                                     faceStrings.material = newMaterial;
 
-                                    var normal = wall.Normals[0];
-                                    if (normal.c == -1)
+                                    if (wall.Normals.Count > 0)
                                     {
+                                        var normal = wall.Normals[0];
+                                        if (normal.c == -1)
+                                        {
 
-                                        faceGroups["ceilings"].Add(faceStrings);
-                                    }
-                                    else if (normal.c == 1)
-                                    {
+                                            faceGroups["ceilings"].Add(faceStrings);
+                                        }
+                                        else if (normal.c == 1)
+                                        {
 
-                                        faceGroups["floors"].Add(faceStrings);
-                                    }
-                                    else if ((Math.Abs(normal.a) == 1 || Math.Abs(normal.b) == 1))
-                                    {
-                                        faceGroups["walls"].Add(faceStrings);
+                                            faceGroups["floors"].Add(faceStrings);
+                                        }
+                                        else if ((Math.Abs(normal.a) == 1 || Math.Abs(normal.b) == 1))
+                                        {
+                                            faceGroups["walls"].Add(faceStrings);
 
-                                    }
-                                    else if (normal.c > 0 && normal.c < 1)
+                                        }
+                                        else if (normal.c > 0 && normal.c < 1)
+                                        {
+                                            faceGroups["ramps"].Add(faceStrings);
+                                        }
+                                        else
+                                        {
+                                            faceGroups["misc"].Add(faceStrings);
+                                        }
+                                    } else
                                     {
-                                        faceGroups["ramps"].Add(faceStrings);
-                                    }
-                                    else
-                                    {
-                                        faceGroups["misc"].Add(faceStrings);
-                                    }
+										faceGroups["misc"].Add(faceStrings);
+									}
 								}
 							}
 

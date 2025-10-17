@@ -23,8 +23,8 @@ public class WLD
 		Fragments = new List<Fragment>();
 		StringDB = new Dictionary<int, string>();
 		FragmentContextQueue = new Queue<int>();
-
 	}
+
 	private static bool VerifyAgainstBytes(BinaryReader reader, byte[] compareBytes)
 	{
 		var bytes = reader.ReadBytes(compareBytes.Length);
@@ -103,11 +103,12 @@ public class WLD
 
 			Debug.Assert(stringCount == stringBlockArray.Length - 2); // - 2 because it doesn't count the first and last entries (placeholders/blank)
 
-			Fragments.Add(new Fragment());
+			Fragments.Add(new Fragment()); // FIXME
 			for (int currentFragment = 0; currentFragment < maxFragments; ++currentFragment)
 			{
 				var fragmentLength = reader.ReadUInt32();
 				var fragmentType = reader.ReadUInt32();
+
 				//Console.WriteLine($"Fragment 0x{Convert.ToString(fragmentType, 16)} Length={fragmentLength}");
 
 				int readerOffsetBefore = (int)reader.BaseStream.Position;
@@ -123,6 +124,25 @@ public class WLD
 						{
 							Fragment04_SimpleSpriteDef fragment = new Fragment04_SimpleSpriteDef(reader);
 							Fragments.Add(fragment);
+							break;
+						}
+					case 0x06:
+						{
+							Fragment06_2DSpriteDef fragment = new Fragment06_2DSpriteDef(reader);
+							Fragments.Add(fragment);
+							break;
+						}
+					case 0x08:
+						{
+							Fragment08_3DSpriteDef fragment = new Fragment08_3DSpriteDef(reader);
+							Fragments.Add(fragment);
+							break;
+						}
+					case 0x14:
+						{
+							Fragment14_ActorDef fragment = new Fragment14_ActorDef(reader);
+							Fragments.Add(fragment);
+
 							break;
 						}
 					case 0x2c:
@@ -153,7 +173,8 @@ public class WLD
 						reader.ReadUInt32(); // Unknown
 						var fragmentRef = reader.ReadUInt32();
 						FragmentContextQueue.Enqueue((int)fragmentRef);
-						// 4 bytes unknown
+						//Console.WriteLine($"Context queue add {fragmentRef}");
+						// 4 bytes unknown for some types
 						Fragments.Add(new Fragment());
 						break;
 					default:
@@ -161,6 +182,10 @@ public class WLD
 						break;
 
 				}
+
+				Fragments[Fragments.Count - 1].Type = fragmentType;
+				Fragments[Fragments.Count - 1].Length = fragmentLength;
+
 				int readerOffsetAfter = (int)reader.BaseStream.Position;
 
 				reader.ReadBytes((int)fragmentLength - (readerOffsetAfter - readerOffsetBefore));
